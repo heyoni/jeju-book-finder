@@ -1,7 +1,7 @@
 {
-  "name": "bookbolt-proxy",
+  "name": "jeju-book-finder",
   "version": "1.0.0",
-  "description": "Libropia 검색 프록시 서버",
+  "description": "제주도 도서관 도서 검색 프록시 서버",
   "main": "proxy-server.js",
   "scripts": {
     "start": "node proxy-server.js",
