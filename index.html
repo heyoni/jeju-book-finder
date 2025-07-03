@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Libropia 도서 검색</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .search-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        #searchInput {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        #searchInput:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        #searchBtn {
+            padding: 12px 24px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        #searchBtn:hover {
+            background-color: #0056b3;
+        }
+        .url-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            color: #666;
+        }
+        .info {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #e7f3ff;
+            border-left: 4px solid #007bff;
+            border-radius: 0 5px 5px 0;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .book-item {
+            background: white;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .book-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .book-info {
+            color: #666;
+            font-size: 14px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .library-selector {
+            margin-bottom: 20px;
+        }
+        .library-selector h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 16px;
+        }
+        .library-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .library-btn {
+            padding: 8px 16px;
+            border: 2px solid #ddd;
+            background: white;
+            color: #666;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .library-btn:hover {
+            border-color: #007bff;
+            color: #007bff;
+        }
+        .library-btn.active {
+            border-color: #007bff;
+            background: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Libropia 도서 검색</h1>
+        
+        <div class="library-selector">
+            <h3>도서관 선택</h3>
+            <div class="library-buttons">
+                <button type="button" class="library-btn active" data-code="MJ">한라도서관</button>
+                <button type="button" class="library-btn" data-code="MK">우당도서관</button>
+                <button type="button" class="library-btn" data-code="ML">탐라도서관</button>
+                <button type="button" class="library-btn" data-code="MM">제주 기적의도서관</button>
+                <button type="button" class="library-btn" data-code="MP">애월도서관</button>
+            </div>
+        </div>
+
+        <form class="search-form" onsubmit="performSearch(event)">
+            <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="검색할 도서명을 입력하세요..."
+                required
+            >
+            <button type="submit" id="searchBtn">검색</button>
+        </form>
+
+        <div id="results" style="display: none;">
+            <h2>검색 결과</h2>
+            <div id="loading" style="display: none; text-align: center; padding: 20px;">
+                <div style="display: inline-block; border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite;"></div>
+                <p>검색 중...</p>
+            </div>
+            <div id="resultsList"></div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수로 선택된 도서관 코드 관리
+        let selectedLibraryCode = 'MJ'; // 기본값: 한라도서관
+
+        // 도서관 선택 기능
+        function initLibrarySelector() {
+            const libraryButtons = document.querySelectorAll('.library-btn');
+            
+            libraryButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // 모든 버튼의 active 클래스 제거
+                    libraryButtons.forEach(btn => btn.classList.remove('active'));
+                    
+                    // 클릭된 버튼에 active 클래스 추가
+                    this.classList.add('active');
+                    
+                    // 선택된 도서관 코드 업데이트
+                    selectedLibraryCode = this.getAttribute('data-code');
+                    
+                    console.log('선택된 도서관:', this.textContent, '코드:', selectedLibraryCode);
+                });
+            });
+        }
+
+        async function performSearch(event) {
+            event.preventDefault();
+            const keyword = document.getElementById('searchInput').value.trim();
+            
+            if (!keyword) {
+                alert('검색어를 입력해주세요!');
+                return;
+            }
+
+            // 제주도 도서관 검색 URL 생성
+            const encodedKeyword = encodeURIComponent(keyword);
+            const searchUrl = `https://www.jeju.go.kr/tool/lib/search.jsp?lib=${selectedLibraryCode}&q=${encodedKeyword}`;
+            
+            console.log('검색 URL:', searchUrl);
+            console.log('선택된 도서관:', selectedLibraryCode);
+            
+            // 결과 섹션 표시 및 로딩 시작
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('resultsList').innerHTML = '';
+            
+            try {
+                // 프록시 서버를 통해 검색 (제주도 도서관 API 사용)
+                const response = await fetch(`http://localhost:3001/api/search?keyword=${encodedKeyword}&lib=${selectedLibraryCode}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayResults(result.data, result.cached, result.responseTime);
+                } else {
+                    throw new Error(result.error || '검색 실패');
+                }
+            } catch (error) {
+                console.error('검색 오류:', error);
+                document.getElementById('resultsList').innerHTML = `
+                    <div class="book-item">
+                        <div class="book-title">프록시 서버 연결 실패</div>
+                        <div class="book-info">
+                            프록시 서버가 실행되지 않았습니다.<br>
+                            터미널에서 다음 명령어를 실행하세요:<br>
+                            <code style="background: #f5f5f5; padding: 2px 4px; border-radius: 3px;">npm install && npm start</code>
+                        </div>
+                        <button onclick="window.open('${searchUrl}', '_blank')" style="margin-top: 10px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;">새 탭에서 검색 결과 보기</button>
+                    </div>
+                `;
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        function displayResults(data, cached = false, responseTime = 0) {
+            const resultsList = document.getElementById('resultsList');
+            
+            try {
+                const jsonData = JSON.parse(data);
+                
+                if (jsonData.Result && jsonData.Result.ResultCode === 'Y' && 
+                    jsonData.Contents && jsonData.Contents.LibraryDataSearchList) {
+                    
+                    const books = jsonData.Contents.LibraryDataSearchList;
+                    const totalCount = jsonData.Contents.TotalCount;
+                    const libraryName = jsonData.Contents.LibraryName;
+                    
+                    if (books.length > 0) {
+                        const cacheIcon = cached ? '⚡️' : '🔍';
+                        const cacheText = cached ? '캐시됨' : 'API 호출';
+                        
+                        let html = `
+                            <div class="book-item" style="background: #e7f3ff; border-left: 4px solid #007bff;">
+                                <div class="book-title">검색 결과: ${totalCount}건</div>
+                                <div class="book-info">
+                                    도서관: ${libraryName}<br>
+                                    <small>${cacheIcon} ${cacheText} • 응답시간: ${responseTime}ms</small>
+                                </div>
+                            </div>
+                        `;
+                        
+                        books.forEach(book => {
+                            const statusColor = book.BookWorkingStatus.includes('대출가능') ? '#28a745' : 
+                                              book.BookWorkingStatus.includes('대출중') ? '#dc3545' : 
+                                              book.BookWorkingStatus.includes('예약') ? '#ffc107' : '#6c757d';
+                            
+                            html += `
+                                <div class="book-item">
+                                    <div style="display: flex; gap: 15px;">
+                                        ${book.BookThumbnailURL ? 
+                                            `<img src="${book.BookThumbnailURL}" alt="책 표지" style="width: 80px; height: 100px; object-fit: cover; border-radius: 5px; flex-shrink: 0;">` 
+                                            : ''}
+                                        <div style="flex: 1;">
+                                            <div class="book-title">${book.BookTitle}</div>
+                                            <div class="book-info">
+                                                <strong>저자:</strong> ${book.BookAuthor}<br>
+                                                <strong>출판사:</strong> ${book.BookPublisher} (${book.BookPublisherYear})<br>
+                                                <strong>ISBN:</strong> ${book.BookISBN}<br>
+                                                <strong>소장위치:</strong> ${book.LibraryBookLocationRoom}<br>
+                                                <strong>대출상태:</strong> <span style="color: ${statusColor}; font-weight: bold;">${book.BookWorkingStatus}</span>
+                                            </div>
+                                            ${book.LibrarySearchDetailURL ? 
+                                                `<button onclick="window.open('${book.LibrarySearchDetailURL}', '_blank')" 
+                                                   style="margin-top: 8px; padding: 6px 12px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;">
+                                                   상세정보 보기
+                                                </button>` 
+                                                : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        resultsList.innerHTML = html;
+                    } else {
+                        resultsList.innerHTML = '<div class="book-item"><div class="book-title">검색 결과가 없습니다</div></div>';
+                    }
+                } else {
+                    resultsList.innerHTML = `
+                        <div class="book-item">
+                            <div class="book-title">API 응답 오류</div>
+                            <div class="book-info">서버에서 올바른 응답을 받지 못했습니다.</div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('JSON 파싱 오류:', error);
+                resultsList.innerHTML = `
+                    <div class="book-item">
+                        <div class="book-title">데이터 처리 오류</div>
+                        <div class="book-info">응답 데이터를 처리하는 중 오류가 발생했습니다.</div>
+                        <details style="margin-top: 10px;">
+                            <summary>원본 응답 데이터</summary>
+                            <pre style="background: #f5f5f5; padding: 10px; border-radius: 3px; overflow: auto; max-height: 200px; font-size: 11px;">${data}</pre>
+                        </details>
+                    </div>
+                `;
+            }
+        }
+
+        // 도서관 선택 기능 초기화
+        initLibrarySelector();
+        
+        // 엔터키로도 검색 가능
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch(e);
+            }
+        });
+    </script>
+</body>
+</html>
