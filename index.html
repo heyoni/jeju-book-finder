@@ -226,7 +226,7 @@
                 // 로컬 개발 시에는 localhost:3001, 배포 시에는 Vercel Functions URL 사용
                 const apiUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
                     ? `http://localhost:3001/api/search?keyword=${encodedKeyword}&lib=${selectedLibraryCode}`
-                    : `https://jeju-book-finder-api.vercel.app/api/search?keyword=${encodedKeyword}&lib=${selectedLibraryCode}`;
+                    : `https://jeju-book-finder.vercel.app/api/search?keyword=${encodedKeyword}&lib=${selectedLibraryCode}`;
                 
                 const response = await fetch(apiUrl);
                 const result = await response.json();
