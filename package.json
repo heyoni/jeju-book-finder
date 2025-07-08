@@ -3,14 +3,14 @@
   "version": "1.0.0",
   "description": "제주도 도서관 도서 검색 프록시 서버",
   "main": "proxy-server.js",
+  "type": "module",
   "scripts": {
     "start": "node proxy-server.js",
     "dev": "nodemon proxy-server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "node-fetch": "^2.6.12"
+    "cors": "^2.8.5"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

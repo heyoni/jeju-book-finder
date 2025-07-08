@@ -1,12 +1,9 @@
-import express from 'express';
-import cors from 'cors';
 // Node.js 18+에서는 fetch가 내장되어 있음
+// const fetch = require('node-fetch');
 
-const app = express();
-const PORT = 3001;
-
-app.use(cors());
-app.use(express.json());
+// 간단한 메모리 캐시 (서버리스 환경에서는 제한적)
+const cache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5분
 
 // 도서관 코드에 따른 도서관 이름 반환
 function getLibraryName(libraryCode) {
@@ -20,19 +17,39 @@ function getLibraryName(libraryCode) {
     return libraries[libraryCode] || '제주도서관';
 }
 
-// 간단한 메모리 캐시
-const cache = new Map();
-const CACHE_DURATION = 5 * 60 * 1000; // 5분
-
-app.get('/api/search', async (req, res) => {
+// Vercel Functions용 핸들러 (export default 방식)
+export default async function handler(req, res) {
+    // CORS 헤더 설정
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    // OPTIONS 요청 처리 (CORS preflight)
+    if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return;
+    }
+    
+    // GET 요청만 허용
+    if (req.method !== 'GET') {
+        res.status(405).json({ error: 'Method not allowed' });
+        return;
+    }
+    
+    // 테스트용: keyword 없이 접근 시 API 상태 확인
+    if (!req.query.keyword) {
+        return res.json({ 
+            status: 'API is running',
+            message: '제주 도서관 검색 API',
+            usage: 'GET /api/search?keyword=도서명&lib=도서관코드',
+            timestamp: new Date().toISOString()
+        });
+    }
+    
     const startTime = Date.now();
     
     try {
         const { keyword, lib } = req.query;
-        
-        if (!keyword) {
-            return res.status(400).json({ error: '검색어가 필요합니다' });
-        }
 
         // 도서관 코드 기본값 설정
         const libraryCode = lib || 'MJ';
@@ -80,7 +97,7 @@ app.get('/api/search', async (req, res) => {
             // HTML 응답일 경우 텍스트로 받아서 처리
             const htmlText = await response.text();
             
-            // 간단한 HTML 파싱으로 도서 정보 추출 (실제 사용 시에는 더 정교한 파싱 필요)
+            // 간단한 HTML 파싱으로 도서 정보 추출
             const mockData = {
                 Result: { ResultCode: 'Y' },
                 Contents: {
@@ -139,8 +156,4 @@ app.get('/api/search', async (req, res) => {
             responseTime: Date.now() - startTime
         });
     }
-});
-
-app.listen(PORT, () => {
-    console.log(`프록시 서버가 http://localhost:${PORT} 에서 실행 중입니다`);
-});
+}

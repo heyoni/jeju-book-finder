@@ -168,6 +168,18 @@
         // 전역 변수로 선택된 도서관 코드 관리
         let selectedLibraryCode = 'MJ'; // 기본값: 한라도서관
 
+        // 도서관 코드에서 이름으로 변환하는 함수
+        function getLibraryNameFromCode(code) {
+            const libraries = {
+                'MJ': '한라도서관',
+                'MK': '우당도서관',
+                'ML': '탐라도서관',
+                'MM': '제주 기적의도서관',
+                'MP': '애월도서관'
+            };
+            return libraries[code] || '제주도서관';
+        }
+
         // 도서관 선택 기능
         function initLibrarySelector() {
             const libraryButtons = document.querySelectorAll('.library-btn');
@@ -210,8 +222,13 @@
             document.getElementById('resultsList').innerHTML = '';
             
             try {
-                // 프록시 서버를 통해 검색 (제주도 도서관 API 사용)
-                const response = await fetch(`http://localhost:3001/api/search?keyword=${encodedKeyword}&lib=${selectedLibraryCode}`);
+                // Vercel Functions를 통해 검색 (제주도 도서관 API 사용)
+                // 로컬 개발 시에는 localhost:3001, 배포 시에는 Vercel Functions URL 사용
+                const apiUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+                    ? `http://localhost:3001/api/search?keyword=${encodedKeyword}&lib=${selectedLibraryCode}`
+                    : `https://jeju-book-finder-api.vercel.app/api/search?keyword=${encodedKeyword}&lib=${selectedLibraryCode}`;
+                
+                const response = await fetch(apiUrl);
                 const result = await response.json();
                 
                 if (result.success) {
@@ -223,11 +240,12 @@
                 console.error('검색 오류:', error);
                 document.getElementById('resultsList').innerHTML = `
                     <div class="book-item">
-                        <div class="book-title">프록시 서버 연결 실패</div>
+                        <div class="book-title">API 서버 연결 실패</div>
                         <div class="book-info">
-                            프록시 서버가 실행되지 않았습니다.<br>
-                            터미널에서 다음 명령어를 실행하세요:<br>
-                            <code style="background: #f5f5f5; padding: 2px 4px; border-radius: 3px;">npm install && npm start</code>
+                            API 서버에 연결할 수 없습니다.<br>
+                            로컬 개발 환경에서는 터미널에서 다음 명령어를 실행하세요:<br>
+                            <code style="background: #f5f5f5; padding: 2px 4px; border-radius: 3px;">npm start</code><br>
+                            <small>오류: ${error.message}</small>
                         </div>
                         <button onclick="window.open('${searchUrl}', '_blank')" style="margin-top: 10px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;">새 탭에서 검색 결과 보기</button>
                     </div>
@@ -241,14 +259,15 @@
             const resultsList = document.getElementById('resultsList');
             
             try {
-                const jsonData = JSON.parse(data);
+                // data가 이미 객체인 경우 JSON.parse를 건너뛰기
+                const jsonData = typeof data === 'string' ? JSON.parse(data) : data;
                 
-                if (jsonData.Result && jsonData.Result.ResultCode === 'Y' && 
-                    jsonData.Contents && jsonData.Contents.LibraryDataSearchList) {
+                // 실제 API 응답 구조에 맞게 수정
+                if (jsonData.books && Array.isArray(jsonData.books)) {
                     
-                    const books = jsonData.Contents.LibraryDataSearchList;
-                    const totalCount = jsonData.Contents.TotalCount;
-                    const libraryName = jsonData.Contents.LibraryName;
+                    const books = jsonData.books;
+                    const totalCount = books.length;
+                    const libraryName = getLibraryNameFromCode(books[0]?.manageCode || selectedLibraryCode);
                     
                     if (books.length > 0) {
                         const cacheIcon = cached ? '⚡️' : '🔍';
@@ -265,31 +284,24 @@
                         `;
                         
                         books.forEach(book => {
-                            const statusColor = book.BookWorkingStatus.includes('대출가능') ? '#28a745' : 
-                                              book.BookWorkingStatus.includes('대출중') ? '#dc3545' : 
-                                              book.BookWorkingStatus.includes('예약') ? '#ffc107' : '#6c757d';
+                            // 대출 상태 추정 (실제 API에서 제공하지 않으므로)
+                            const statusText = book.deleteDate ? '삭제됨' : '소장중';
+                            const statusColor = book.deleteDate ? '#dc3545' : '#28a745';
                             
                             html += `
                                 <div class="book-item">
                                     <div style="display: flex; gap: 15px;">
-                                        ${book.BookThumbnailURL ? 
-                                            `<img src="${book.BookThumbnailURL}" alt="책 표지" style="width: 80px; height: 100px; object-fit: cover; border-radius: 5px; flex-shrink: 0;">` 
-                                            : ''}
                                         <div style="flex: 1;">
-                                            <div class="book-title">${book.BookTitle}</div>
+                                            <div class="book-title">${book.title}</div>
                                             <div class="book-info">
-                                                <strong>저자:</strong> ${book.BookAuthor}<br>
-                                                <strong>출판사:</strong> ${book.BookPublisher} (${book.BookPublisherYear})<br>
-                                                <strong>ISBN:</strong> ${book.BookISBN}<br>
-                                                <strong>소장위치:</strong> ${book.LibraryBookLocationRoom}<br>
-                                                <strong>대출상태:</strong> <span style="color: ${statusColor}; font-weight: bold;">${book.BookWorkingStatus}</span>
+                                                <strong>저자:</strong> ${book.author}<br>
+                                                <strong>출판사:</strong> ${book.publisher} (${book.pubYear})<br>
+                                                <strong>ISBN:</strong> ${book.stCode}<br>
+                                                <strong>소장위치:</strong> ${book.idxHoldPlace || '정보없음'}<br>
+                                                <strong>청구기호:</strong> ${book.bookCode}<br>
+                                                <strong>분류:</strong> ${book.classNo}<br>
+                                                <strong>상태:</strong> <span style="color: ${statusColor}; font-weight: bold;">${statusText}</span>
                                             </div>
-                                            ${book.LibrarySearchDetailURL ? 
-                                                `<button onclick="window.open('${book.LibrarySearchDetailURL}', '_blank')" 
-                                                   style="margin-top: 8px; padding: 6px 12px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;">
-                                                   상세정보 보기
-                                                </button>` 
-                                                : ''}
                                         </div>
                                     </div>
                                 </div>
@@ -315,13 +327,22 @@
                 }
             } catch (error) {
                 console.error('JSON 파싱 오류:', error);
+                console.log('응답 데이터 타입:', typeof data);
+                console.log('응답 데이터:', data);
+                
+                // data가 객체인 경우 JSON.stringify로 변환
+                const dataString = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
+                
                 resultsList.innerHTML = `
                     <div class="book-item">
                         <div class="book-title">데이터 처리 오류</div>
-                        <div class="book-info">응답 데이터를 처리하는 중 오류가 발생했습니다.</div>
+                        <div class="book-info">
+                            응답 데이터를 처리하는 중 오류가 발생했습니다.<br>
+                            <small>오류: ${error.message}</small>
+                        </div>
                         <details style="margin-top: 10px;">
                             <summary>원본 응답 데이터</summary>
-                            <pre style="background: #f5f5f5; padding: 10px; border-radius: 3px; overflow: auto; max-height: 200px; font-size: 11px;">${data}</pre>
+                            <pre style="background: #f5f5f5; padding: 10px; border-radius: 3px; overflow: auto; max-height: 200px; font-size: 11px;">${dataString}</pre>
                         </details>
                     </div>
                 `;
