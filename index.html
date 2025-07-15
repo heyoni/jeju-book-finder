@@ -5,128 +5,553 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>제주 도서관 도서 검색</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 800px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f5f5f5;
+            background: linear-gradient(135deg,rgb(207, 205, 205) 0% 100%);
+            min-height: 100vh;
+            line-height: 1.6;
         }
+        
         .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
         }
+        
         h1 {
-            color: #333;
+            color: #1a202c;
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
+            font-size: 2.5rem;
+            font-weight: 700;
         }
+        
+        .library-selector {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .library-selector h3 {
+            margin: 0 0 16px 0;
+            color: #2d3748;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .library-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+        }
+        
+        .library-btn {
+            padding: 12px 20px;
+            border: 1px solid #e1e5e9;
+            background: white;
+            color: #374151;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-align: center;
+            white-space: nowrap;
+        }
+        
+        .library-btn:hover {
+            border-color: #d1d5db;
+            background: #f9fafb;
+            color: #1f2937;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .library-btn.active {
+            border-color: #374151;
+            background: #374151;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        
         .search-form {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 8px;
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
+        
         #searchInput {
             flex: 1;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
+            padding: 16px 20px;
+            border: none;
+            border-radius: 12px;
             font-size: 16px;
+            background: rgba(255,255,255,0.9);
+            color: #2d3748;
+            transition: all 0.3s ease;
         }
+        
         #searchInput:focus {
             outline: none;
-            border-color: #007bff;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(55, 65, 81, 0.1);
+            border-color: #374151;
         }
+        
+        #searchInput::placeholder {
+            color: #9ca3af;
+        }
+        
         #searchBtn {
-            padding: 12px 24px;
-            background-color: #007bff;
+            padding: 16px 32px;
+            background: #374151;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            white-space: nowrap;
         }
+        
         #searchBtn:hover {
-            background-color: #0056b3;
+            background: #1f2937;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(55, 65, 81, 0.3);
         }
+        
+        #searchBtn:active {
+            transform: translateY(0);
+        }
+        
+        #results {
+            margin-top: 30px;
+            padding: 25px;
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        #results h2 {
+            color: #2d3748;
+            margin-bottom: 25px;
+            font-size: 1.4rem;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .book-item {
+            background: rgba(255,255,255,0.9);
+            margin: 16px 0;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .book-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-color: rgba(55, 65, 81, 0.2);
+        }
+        
+        .book-item.summary {
+            cursor: default;
+        }
+        
+        .book-item.summary:hover {
+            transform: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-color: rgba(255,255,255,0.3);
+        }
+        
+        .book-title {
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 12px;
+            font-size: 1.2rem;
+            line-height: 1.4;
+        }
+        
+        .book-info {
+            color: #4a5568;
+            font-size: 15px;
+            line-height: 1.8;
+        }
+        
+        .book-info strong {
+            color: #2d3748;
+            font-weight: 600;
+        }
+        
         .url-info {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 6px;
             margin-top: 20px;
-            font-family: monospace;
+            font-family: 'SF Mono', Monaco, monospace;
             font-size: 12px;
             word-break: break-all;
-            color: #666;
+            color: #6b7280;
+            border: 1px solid #e2e8f0;
         }
+        
         .info {
-            margin-top: 15px;
-            padding: 15px;
-            background-color: #e7f3ff;
-            border-left: 4px solid #007bff;
-            border-radius: 0 5px 5px 0;
-        }
-        #results {
             margin-top: 20px;
-            padding: 20px;
-            background: #f9f9f9;
-            border-radius: 5px;
+            padding: 16px;
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            border-radius: 0 6px 6px 0;
+            color: #374151;
         }
-        .book-item {
-            background: white;
-            margin: 10px 0;
-            padding: 15px;
-            border-radius: 5px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .book-title {
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 5px;
-        }
-        .book-info {
-            color: #666;
-            font-size: 14px;
-        }
+        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .library-selector {
-            margin-bottom: 20px;
+        
+        .loading-spinner {
+            display: inline-block;
+            border: 3px solid #e5e7eb;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 1s linear infinite;
         }
-        .library-selector h3 {
-            margin: 0 0 10px 0;
-            color: #333;
+        
+        .pagination-controls {
+            margin-top: 25px;
+            padding: 25px;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .pagination-info {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            padding: 16px 24px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .pagination-info-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #374151;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .pagination-info-icon {
+            color: #3b82f6;
             font-size: 16px;
         }
-        .library-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
+        
+        .pagination-info-number {
+            color: #374151;
+            font-weight: 700;
         }
-        .library-btn {
-            padding: 8px 16px;
-            border: 2px solid #ddd;
+        
+        .pagination-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .pagination-btn {
+            padding: 10px 14px;
+            border: 1px solid #e1e5e9;
             background: white;
-            color: #666;
-            border-radius: 5px;
+            color: #374151;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
-            transition: all 0.2s;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
         }
-        .library-btn:hover {
-            border-color: #007bff;
-            color: #007bff;
+        
+        .pagination-btn:hover:not(:disabled) {
+            border-color: #d1d5db;
+            background: #f9fafb;
+            color: #1f2937;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
-        .library-btn.active {
-            border-color: #007bff;
-            background: #007bff;
+        
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .pagination-btn.active {
+            border-color: #374151;
+            background: #374151;
             color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(55, 65, 81, 0.3);
         }
+        
+        /* 모달 스타일 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            position: relative;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #9ca3af;
+            transition: color 0.2s ease;
+        }
+        
+        .modal-close:hover {
+            color: #374151;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+            padding-right: 40px;
+            line-height: 1.4;
+        }
+        
+        .modal-info {
+            display: grid;
+            gap: 16px;
+        }
+        
+        .modal-info-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .modal-info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .modal-info-label {
+            font-weight: 600;
+            color: #374151;
+            min-width: 100px;
+            flex-shrink: 0;
+        }
+        
+        .modal-info-value {
+            color: #4b5563;
+            flex: 1;
+            word-break: break-word;
+        }
+        
+        .book-cover-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .book-cover {
+            max-width: 150px;
+            max-height: 200px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+        }
+        
+        .book-cover-loading {
+            width: 150px;
+            height: 200px;
+            background: #f3f4f6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            font-size: 14px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .book-cover-error {
+            width: 150px;
+            height: 200px;
+            background: #f9fafb;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            font-size: 14px;
+            border: 1px solid #e5e7eb;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        
+        /* 반응형 디자인 */
+        @media (max-width: 768px) {
+            body {
+                padding: 16px;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.75rem;
+                margin-bottom: 25px;
+            }
+            
+            .library-selector {
+                padding: 16px;
+                margin-bottom: 20px;
+            }
+            
+            .library-buttons {
+                gap: 6px;
+            }
+            
+            .library-btn {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+            
+            .search-form {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            #searchInput {
+                padding: 12px 14px;
+                font-size: 16px; /* iOS 확대 방지 */
+            }
+            
+            #searchBtn {
+                padding: 12px 20px;
+                font-size: 16px;
+            }
+            
+            .book-item {
+                padding: 16px;
+                margin: 10px 0;
+            }
+            
+            .book-title {
+                font-size: 1rem;
+            }
+            
+            .book-info {
+                font-size: 13px;
+            }
+            
+            .pagination-info {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .pagination-info-item {
+                justify-content: center;
+            }
+            
+            .pagination-btn {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 16px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .library-btn {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+            
+            #searchInput {
+                padding: 10px 12px;
+                font-size: 16px;
+            }
+            
+            #searchBtn {
+                padding: 10px 16px;
+                font-size: 15px;
+            }
+        }
+        
     </style>
 </head>
 <body>
@@ -157,16 +582,30 @@
         <div id="results" style="display: none;">
             <h2>검색 결과</h2>
             <div id="loading" style="display: none; text-align: center; padding: 20px;">
-                <div style="display: inline-block; border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite;"></div>
-                <p>검색 중...</p>
+                <div class="loading-spinner"></div>
+                <p style="margin-top: 12px; color: #6b7280; font-weight: 400;">검색 중...</p>
             </div>
             <div id="resultsList"></div>
+            <div id="paginationControls" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- 도서 상세정보 모달 -->
+    <div id="bookModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <div class="modal-title" id="modalTitle"></div>
+            <div class="modal-info" id="modalInfo"></div>
         </div>
     </div>
 
     <script>
         // 전역 변수로 선택된 도서관 코드 관리
         let selectedLibraryCode = 'MJ'; // 기본값: 한라도서관
+        let currentPage = 1;
+        let currentKeyword = '';
+        let totalPages = 1;
+        let currentResults = null;
 
         // 도서관 코드에서 이름으로 변환하는 함수
         function getLibraryNameFromCode(code) {
@@ -195,44 +634,48 @@
                     // 선택된 도서관 코드 업데이트
                     selectedLibraryCode = this.getAttribute('data-code');
                     
-                    console.log('선택된 도서관:', this.textContent, '코드:', selectedLibraryCode);
                 });
             });
         }
 
-        async function performSearch(event) {
-            event.preventDefault();
+        async function performSearch(event, page = 1) {
+            if (event) event.preventDefault();
+            
             const keyword = document.getElementById('searchInput').value.trim();
             
             if (!keyword) {
                 alert('검색어를 입력해주세요!');
                 return;
             }
+            
+            currentKeyword = keyword;
+            currentPage = page;
 
+            // 페이지 크기 고정 (20개)
+            const pageSize = 20;
+            
             // 제주도 도서관 검색 URL 생성
             const encodedKeyword = encodeURIComponent(keyword);
-            const searchUrl = `https://www.jeju.go.kr/tool/lib/search.jsp?lib=${selectedLibraryCode}&q=${encodedKeyword}`;
-            
-            console.log('검색 URL:', searchUrl);
-            console.log('선택된 도서관:', selectedLibraryCode);
+            const searchUrl = `https://www.jeju.go.kr/tool/lib/search.jsp?lib=${selectedLibraryCode}&q=${encodedKeyword}&page=${page}&pageSize=${pageSize}`;
             
             // 결과 섹션 표시 및 로딩 시작
             document.getElementById('results').style.display = 'block';
             document.getElementById('loading').style.display = 'block';
             document.getElementById('resultsList').innerHTML = '';
+            document.getElementById('paginationControls').style.display = 'none';
             
             try {
                 // Vercel Functions를 통해 검색 (제주도 도서관 API 사용)
                 // 로컬 개발 시에는 localhost:3001, 배포 시에는 Vercel Functions URL 사용
                 const apiUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-                    ? `http://localhost:3001/api/search?keyword=${encodedKeyword}&lib=${selectedLibraryCode}`
-                    : `https://jeju-book-finder.vercel.app/api/search?keyword=${encodedKeyword}&lib=${selectedLibraryCode}`;
+                    ? `http://localhost:3001/api/search?keyword=${encodedKeyword}&lib=${selectedLibraryCode}&page=${page}&pageSize=${pageSize}`
+                    : `https://jeju-book-finder.vercel.app/api/search?keyword=${encodedKeyword}&lib=${selectedLibraryCode}&page=${page}&pageSize=${pageSize}`;
                 
                 const response = await fetch(apiUrl);
                 const result = await response.json();
                 
                 if (result.success) {
-                    displayResults(result.data, result.cached, result.responseTime);
+                    await displayResults(result.data, result.cached, result.responseTime);
                 } else {
                     throw new Error(result.error || '검색 실패');
                 }
@@ -255,7 +698,7 @@
             }
         }
         
-        function displayResults(data, cached = false, responseTime = 0) {
+        async function displayResults(data, cached = false, responseTime = 0) {
             const resultsList = document.getElementById('resultsList');
             
             try {
@@ -266,7 +709,15 @@
                 if (jsonData.books && Array.isArray(jsonData.books)) {
                     
                     const books = jsonData.books;
-                    const totalCount = books.length;
+                    const query = jsonData.query || {};
+                    const totalRows = query.rows || books.length;
+                    const totalPages = query.pages || 1;
+                    const currentPageFromAPI = query.page || currentPage;
+                    const pageSize = query.pageSize || 20;
+                    
+                    // 전역 변수 업데이트
+                    currentResults = jsonData;
+                    
                     const libraryName = getLibraryNameFromCode(books[0]?.manageCode || selectedLibraryCode);
                     
                     if (books.length > 0) {
@@ -274,33 +725,68 @@
                         const cacheText = cached ? '캐시됨' : 'API 호출';
                         
                         let html = `
-                            <div class="book-item" style="background: #e7f3ff; border-left: 4px solid #007bff;">
-                                <div class="book-title">검색 결과: ${totalCount}건</div>
+                            <div class="book-item summary" style="background: #eff6ff; border-left: 4px solid #374151;">
+                                <div class="book-title">검색 결과: 총 ${totalRows}건 (${currentPageFromAPI}/${totalPages} 페이지)</div>
                                 <div class="book-info">
-                                    도서관: ${libraryName}<br>
-                                    <small>${cacheIcon} ${cacheText} • 응답시간: ${responseTime}ms</small>
+                                    <span style="display: inline-block; background: #374151; color: white; padding: 4px 8px; border-radius: 4px; font-weight: 500; margin-bottom: 8px;">📍 ${libraryName}</span><br>
+                                    <small style="color: #6b7280;">${cacheIcon} ${cacheText} • 응답시간: ${responseTime}ms • 현재 페이지: ${books.length}개 표시</small>
                                 </div>
                             </div>
                         `;
                         
-                        books.forEach(book => {
-                            // 대출 상태 추정 (실제 API에서 제공하지 않으므로)
-                            const statusText = book.deleteDate ? '삭제됨' : '소장중';
-                            const statusColor = book.deleteDate ? '#dc3545' : '#28a745';
+                        // 대출 상태 확인을 위한 비동기 처리
+                        const bookPromises = books.map(async book => {
+                            let statusText, statusColor;
                             
+                            if (book.deleteDate) {
+                                statusText = '삭제됨';
+                                statusColor = '#dc3545';
+                            } else {
+                                // 대출가능여부 API 호출 (자체 프록시 사용)
+                                try {
+                                    const rentApiUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+                                        ? `http://localhost:3001/api/rent-status?key=${book.stCode}`
+                                        : `/api/rent-status?key=${book.stCode}`;
+                                    const rentResponse = await fetch(rentApiUrl);
+                                    const rentData = await rentResponse.json();
+
+                                    if (rentData.status === '대출중') {
+                                        statusText = '대출중';
+                                        statusColor = '#ffc107';
+                                    } else {
+                                        statusText = '대출가능';
+                                        statusColor = '#28a745';
+                                    }
+                                } catch (error) {
+                                    console.error('대출 상태 확인 오류:', error);
+                                    statusText = '상태 확인 불가';
+                                    statusColor = '#6c757d';
+                                }
+                            }
+                            
+                            return {
+                                ...book,
+                                statusText,
+                                statusColor
+                            };
+                        });
+                        
+                        // 모든 대출 상태 확인 완료 후 HTML 생성
+                        const booksWithStatus = await Promise.all(bookPromises);
+                        
+                        // 전역 변수에 책 데이터 저장
+                        currentBooksData = booksWithStatus;
+                        
+                        booksWithStatus.forEach((book, index) => {
                             html += `
-                                <div class="book-item">
+                                <div class="book-item" onclick="showBookDetail(${index})">
                                     <div style="display: flex; gap: 15px;">
                                         <div style="flex: 1;">
                                             <div class="book-title">${book.title}</div>
                                             <div class="book-info">
                                                 <strong>저자:</strong> ${book.author}<br>
-                                                <strong>출판사:</strong> ${book.publisher} (${book.pubYear})<br>
-                                                <strong>ISBN:</strong> ${book.stCode}<br>
-                                                <strong>소장위치:</strong> ${book.idxHoldPlace || '정보없음'}<br>
-                                                <strong>청구기호:</strong> ${book.bookCode}<br>
-                                                <strong>분류:</strong> ${book.classNo}<br>
-                                                <strong>상태:</strong> <span style="color: ${statusColor}; font-weight: bold;">${statusText}</span>
+                                                <strong>소장위치:</strong> ${book.classNo}-${book.bookCode}<br>
+                                                <strong>상태:</strong> <span style="color: ${book.statusColor}; font-weight: bold;">${book.statusText}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -309,11 +795,16 @@
                         });
                         
                         resultsList.innerHTML = html;
+                        
+                        // 페이지네이션 컨트롤 표시
+                        if (totalPages > 1) {
+                            displayPagination(currentPageFromAPI, totalPages, totalRows);
+                        }
                     } else {
                         resultsList.innerHTML = '<div class="book-item"><div class="book-title">검색 결과가 없습니다</div></div>';
+                        document.getElementById('paginationControls').style.display = 'none';
                     }
                 } else {
-                    console.log('API 응답 데이터:', data);
                     resultsList.innerHTML = `
                         <div class="book-item">
                             <div class="book-title">API 응답 오류</div>
@@ -326,10 +817,6 @@
                     `;
                 }
             } catch (error) {
-                console.error('JSON 파싱 오류:', error);
-                console.log('응답 데이터 타입:', typeof data);
-                console.log('응답 데이터:', data);
-                
                 // data가 객체인 경우 JSON.stringify로 변환
                 const dataString = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
                 
@@ -349,8 +836,249 @@
             }
         }
 
+        // 페이지네이션 컨트롤을 생성하는 함수
+        function displayPagination(currentPage, totalPages, totalRows) {
+            const paginationControls = document.getElementById('paginationControls');
+            
+            let html = `
+                <div class="pagination-controls">
+                    <div class="pagination-info">
+                        <div class="pagination-info-item">
+                            <span>총 <span class="pagination-info-number">${totalRows}</span>건</span>
+                        </div>
+                        <div class="pagination-info-item">
+                            <span><span class="pagination-info-number">${currentPage}</span> / <span class="pagination-info-number">${totalPages}</span> 페이지</span>
+                        </div>
+                    </div>
+                    <div class="pagination-buttons">
+                        <button class="pagination-btn" ${currentPage <= 1 ? 'disabled' : ''} onclick="performSearch(null, 1)">
+                            ≪ 처음
+                        </button>
+                        <button class="pagination-btn" ${currentPage <= 1 ? 'disabled' : ''} onclick="performSearch(null, ${currentPage - 1})">
+                            ‹ 이전
+                        </button>
+            `;
+            
+            // 페이지 번호 버튼들 (1, 2, ..., 마지막 페이지 형태로 표시)
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            // 첫 페이지가 표시 범위에 없으면 1과 ... 추가
+            if (startPage > 1) {
+                html += `<button class="pagination-btn" onclick="performSearch(null, 1)">1</button>`;
+                if (startPage > 2) {
+                    html += `<span style="padding: 8px 4px; color: #6b7280;">...</span>`;
+                }
+            }
+            
+            // 현재 페이지 주변 페이지들
+            for (let i = startPage; i <= endPage; i++) {
+                html += `
+                    <button class="pagination-btn ${i === currentPage ? 'active' : ''}" onclick="performSearch(null, ${i})">
+                        ${i}
+                    </button>
+                `;
+            }
+            
+            // 마지막 페이지가 표시 범위에 없으면 ... 과 마지막 페이지 추가
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    html += `<span style="padding: 8px 4px; color: #6b7280;">...</span>`;
+                }
+                html += `<button class="pagination-btn" onclick="performSearch(null, ${totalPages})">${totalPages}</button>`;
+            }
+            
+            html += `
+                        <button class="pagination-btn" ${currentPage >= totalPages ? 'disabled' : ''} onclick="performSearch(null, ${currentPage + 1})">
+                            다음 ›
+                        </button>
+                        <button class="pagination-btn" ${currentPage >= totalPages ? 'disabled' : ''} onclick="performSearch(null, ${totalPages})">
+                            마지막 ≫
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            paginationControls.innerHTML = html;
+            paginationControls.style.display = 'block';
+        }
+
+
+        // 전역 변수로 현재 책 데이터 저장
+        let currentBooksData = [];
+
+        // ISBN에서 실제 검색할 번호 추출 (세트 형태 처리)
+        function extractSearchableISBN(isbn) {
+            if (!isbn) return '';
+            
+            // "9788997336142세트 9788997336098" 형태에서 세트 뒤의 ISBN 추출
+            if (isbn.includes('세트 ')) {
+                const parts = isbn.split('세트 ');
+                if (parts.length > 1) {
+                    return parts[1].trim();
+                }
+            }
+            
+            // 일반적인 경우 그대로 반환
+            return isbn.trim();
+        }
+
+        // 책 표지 이미지 로드
+        async function loadBookCover(isbn) {
+            const searchableISBN = extractSearchableISBN(isbn);
+            if (!searchableISBN) return null;
+            
+            try {
+                // 프록시 서버를 통해 책 정보 API 호출
+                const apiUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+                    ? `http://localhost:3001/api/book-info?isbn=${encodeURIComponent(searchableISBN)}`
+                    : `https://jeju-book-finder.vercel.app/api/book-info?isbn=${encodeURIComponent(searchableISBN)}`;
+                
+                
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    const data = result.data;
+                    // items 배열에서 이미지 URL 추출
+                    if (data && data.items && Array.isArray(data.items) && data.items.length > 0) {
+                        const firstItem = data.items[0];
+                        if (firstItem.image) {
+                            return firstItem.image;
+                        }
+                    }
+                }
+                
+                return null;
+                
+            } catch (error) {
+                return null;
+            }
+        }
+
+        // 책 상세정보 모달 표시
+        async function showBookDetail(bookIndex) {
+            const book = currentBooksData[bookIndex];
+            if (!book) return;
+
+            const modal = document.getElementById('bookModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalInfo = document.getElementById('modalInfo');
+
+            modalTitle.textContent = book.title;
+
+            // 이미지 로딩 상태로 초기 모달 내용 설정
+            modalInfo.innerHTML = `
+                <div class="book-cover-container">
+                    <div class="book-cover-loading">
+                        이미지 로딩 중...
+                    </div>
+                </div>
+                <div class="modal-info-item">
+                    <div class="modal-info-label">저자</div>
+                    <div class="modal-info-value">${book.author}</div>
+                </div>
+                <div class="modal-info-item">
+                    <div class="modal-info-label">출판사</div>
+                    <div class="modal-info-value">${book.publisher}</div>
+                </div>
+                <div class="modal-info-item">
+                    <div class="modal-info-label">출판년도</div>
+                    <div class="modal-info-value">${book.pubYear}</div>
+                </div>
+                <div class="modal-info-item">
+                    <div class="modal-info-label">ISBN</div>
+                    <div class="modal-info-value">${book.stCode}</div>
+                </div>
+                <div class="modal-info-item">
+                    <div class="modal-info-label">소장위치</div>
+                    <div class="modal-info-value">${book.classNo}-${book.bookCode}</div>
+                </div>
+                <div class="modal-info-item">
+                    <div class="modal-info-label">분류번호</div>
+                    <div class="modal-info-value">${book.classNo}</div>
+                </div>
+                <div class="modal-info-item">
+                    <div class="modal-info-label">청구기호</div>
+                    <div class="modal-info-value">${book.bookCode}</div>
+                </div>
+                <div class="modal-info-item">
+                    <div class="modal-info-label">입고일</div>
+                    <div class="modal-info-value">${book.holdDate || '정보없음'}</div>
+                </div>
+                <div class="modal-info-item">
+                    <div class="modal-info-label">대출상태</div>
+                    <div class="modal-info-value">
+                        <span style="color: ${book.statusColor}; font-weight: bold;">${book.statusText}</span>
+                    </div>
+                </div>
+            `;
+
+            modal.style.display = 'block';
+
+            // 이미지 비동기 로드
+            try {
+                const imageUrl = await loadBookCover(book.stCode);
+                const coverContainer = modal.querySelector('.book-cover-container');
+                
+                if (imageUrl) {
+                    coverContainer.innerHTML = `<img src="${imageUrl}" alt="${book.title} 표지" class="book-cover">`;
+                } else {
+                    coverContainer.innerHTML = `
+                        <div class="book-cover-error">
+                            📚
+                            <span>표지 없음</span>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.log('이미지 로드 중 오류:', error);
+                const coverContainer = modal.querySelector('.book-cover-container');
+                if (coverContainer) {
+                    coverContainer.innerHTML = `
+                        <div class="book-cover-error">
+                            📚
+                            <span>표지 없음</span>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // 모달 닫기 기능
+        function initModal() {
+            const modal = document.getElementById('bookModal');
+            const closeBtn = document.querySelector('.modal-close');
+
+            // X 버튼 클릭시 닫기
+            closeBtn.onclick = function() {
+                modal.style.display = 'none';
+            }
+
+            // 모달 외부 클릭시 닫기
+            window.onclick = function(event) {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            }
+
+            // ESC 키로 닫기
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && modal.style.display === 'block') {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+
         // 도서관 선택 기능 초기화
         initLibrarySelector();
+        
+        // 모달 기능 초기화
+        initModal();
         
         // 엔터키로도 검색 가능
         document.getElementById('searchInput').addEventListener('keypress', function(e) {

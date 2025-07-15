@@ -49,17 +49,16 @@ export default async function handler(req, res) {
     const startTime = Date.now();
     
     try {
-        const { keyword, lib } = req.query;
+        const { keyword, lib, page = 1, pageSize = 20 } = req.query;
 
         // 도서관 코드 기본값 설정
         const libraryCode = lib || 'MJ';
 
-        // 캐시 키에 도서관 코드 포함
-        const cacheKey = `${keyword.toLowerCase()}_${libraryCode}`;
+        // 캐시 키에 도서관 코드, 페이지, 페이지 크기 포함
+        const cacheKey = `${keyword.toLowerCase()}_${libraryCode}_${page}_${pageSize}`;
         const cachedResult = cache.get(cacheKey);
         
         if (cachedResult && Date.now() - cachedResult.timestamp < CACHE_DURATION) {
-            console.log(`캐시 히트: ${keyword} (${libraryCode}) (${Date.now() - startTime}ms)`);
             return res.json({
                 success: true,
                 data: cachedResult.data,
@@ -69,10 +68,7 @@ export default async function handler(req, res) {
         }
 
         // 제주도 도서관 API 엔드포인트 (JSON 응답)
-        const searchUrl = `https://www.jeju.go.kr/tool/lib/search.jsp?lib=${libraryCode}&q=${encodeURIComponent(keyword)}&format=json`;
-        
-        console.log(`API 호출 시작: ${keyword} (도서관 코드: ${libraryCode})`);
-        console.log(`검색 URL: ${searchUrl}`);
+        const searchUrl = `https://www.jeju.go.kr/tool/lib/search.jsp?lib=${libraryCode}&q=${encodeURIComponent(keyword)}&format=json&page=${page}&pageSize=${pageSize}`;
         
         const response = await fetch(searchUrl, {
             timeout: 10000, // 10초 타임아웃
@@ -139,7 +135,6 @@ export default async function handler(req, res) {
         }
         
         const responseTime = Date.now() - startTime;
-        console.log(`API 응답 완료: ${keyword} (${libraryCode}) (${responseTime}ms)`);
         
         res.json({ 
             success: true, 
